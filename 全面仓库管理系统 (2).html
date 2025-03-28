@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全面仓库管理系统</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            margin-top: 20px;
+            color: white;
+            background-color: #007BFF;
+            padding: 15px 0;
+        }
+        .tab {
+            overflow: hidden;
+            background-color: #007BFF;
+        }
+        .tab button {
+            background-color: inherit;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 14px 16px;
+            transition: 0.3s;
+            color: white;
+            border-right: 1px solid #0056b3;
+        }
+        .tab button:hover {
+            background-color: #ddd;
+            color: black;
+        }
+        .tab button.active {
+            background-color: #ccc;
+            color: black;
+        }
+        .tabcontent {
+            display: none;
+            padding: 20px;
+            background-color: white;
+            border: 1px solid #ccc;
+            border-top: none;
+            min-height: 50vh;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        .form-container {
+            margin-bottom: 20px;
+        }
+        input[type="text"], select, input[type="number"] {
+            width: calc(30% - 10px);
+            padding: 8px;
+            margin-right: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .status-temp {
+            color: orange;
+        }
+        .status-accepted {
+            color: green;
+        }
+        .status-normal {
+            color: black;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 600px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .details-table {
+            margin-top: 20px;
+        }
+        .details-table th, .details-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .details-table th {
+            background-color: #f4f4f4;
+        }
+        .report-container {
+            margin-top: 20px;
+        }
+        .report-container table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .report-container th, .report-container td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .report-container th {
+            background-color: #f4f4f4;
+        }
+        .alert {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .warehouse-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+            justify-items: center;
+        }
+        .warehouse-item {
+            background-color: #fff;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .warehouse-item:hover {
+            transform: scale(1.02);
+        }
+        .warehouse-item h3 {
+            margin-bottom: 10px;
+        }
+        .warehouse-item p {
+            font-size: 1em;
+            margin: 5px 0;
+        }
+        .warehouse-map-fullscreen {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .map-container {
+            width: 90%;
+            height: 80%;
+            background-color: #f9f9f9;
+            position: relative;
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            gap: 2px;
+            overflow: auto;
+        }
+        .shelf {
+            background-color: green;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 0.8em;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .shelf:hover {
+            transform: scale(1.05);
+        }
+        .shelf.yellow {
+            background-color: yellow;
+            color: black;
+        }
+        .shelf.red {
+            background-color: red;
+        }
+        .shelf.empty {
+            background-color: #ddd;
+            color: #333;
+        }
+        .shelf-label {
+            word-wrap: break-word;
+        }
+        .overlay-close {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 2rem;
+            color: white;
+            cursor: pointer;
+        }
+        .overlay-close:hover {
+            color: #ffcccb;
+        }
+        .controls {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 10px;
+        }
+        .controls button {
+            margin: 5px 0;
+        }
+        .floor-selector, .section-selector {
+            display: flex;
+            align-items: center;
+        }
+        .floor-selector label, .section-selector label {
+            margin-right: 5px;
+            color: white;
+        }
+        .floor-selector select, .section-selector select {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            padding: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .floor-selector select option, .section-selector select option {
+            background-color: white;
+            color: black;
+        }
+        .selected-info {
+            margin-top: 10px;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+<h1>全面仓库管理系统</h1>
+
+<div class="tab">
+    <button class="tablinks" onclick="openTab(event, 'Home')" id="defaultOpen">首页</button>
+    <button class="tablinks" onclick="openTab(event, 'Inventory')">库存管理</button>
+    <button class="tablinks" onclick="openTab(event, 'AddItem')">添加物资</button>
+    <button class="tablinks" onclick="openTab(event, 'ReceiveItem')">物资入库</button>
+    <button class="tablinks" onclick="openTab(event, 'IssueItem')">物资领用</button>
+    <button class="tablinks" onclick="openTab(event, 'TempManage')">临存管理</button>
+    <button class="tablinks" onclick="openTab(event, 'ReturnItem')">物资回仓</button>
+    <button class="tablinks" onclick="openTab(event, 'Acceptance')">物资验收</button>
+    <button class="tablinks" onclick="openTab(event, 'StockTaking')">物资盘点</button>
+    <button class="tablinks" onclick="openTab(event, 'Reports')">报表生成</button>
+</div>
+
+<div id="Home" class="tabcontent">
+    <div class="warehouse-grid">
+        <!-- Warehouse items will be dynamically added here -->
+    </div>
+</div>
+
+<div id="Inventory" class="tabcontent">
+    <div class="form-container">
+        <input type="text" id="searchInventory" placeholder="搜索物资名称...">
+        <select id="filterStatus">
+            <option value="">所有状态</option>
+            <option value="正常">正常</option>
+            <option value="临存管理">临存管理</option>
+            <option value="已验收">已验收</option>
+        </select>
+        <button onclick="filterInventory()">筛选</button>
+    </div>
+    <table id="inventoryTable">
+        <thead>
+            <tr>
+                <th>物资名称</th>
+                <th>类别</th>
+                <th>数量</th>
+                <th>状态</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- 物资项将在这里动态添加 -->
+        </tbody>
+    </table>
+</div>
+
+<div id="AddItem" class="tabcontent">
+    <div class="form-container">
+        <input type="text" id="addItemName" placeholder="物资名称">
+        <select id="addItemCategory">
+            <option value="">请选择类别</option>
+            <option value="电子设备">电子设备</option>
+            <option value="办公用品">办公用品</option>
+            <option value="原材料">原材料</option>
+        </select>
+        <input type="number" id="addItemQuantity" placeholder="数量">
+        <button onclick="addNewItem()">添加物资</button>
+    </div>
+</div>
+
+<div id="ReceiveItem" class="tabcontent">
+    <div class="form-container">
+        <input type="text" id="receiveItemName" placeholder="物资名称">
+        <input type="number" id="receiveItemQuantity" placeholder="数量">
+        <button onclick="receiveItem()">物资入库</button>
+    </div>
+</div>
+
+<div id="IssueItem" class="tabcontent">
+    <div class="form-container">
+        <input type="text" id="issueItemName" placeholder="物资名称">
+        <input type="number" id="issueItemQuantity" placeholder="数量">
+        <button onclick="issueItem()">物资领用</button>
+    </div>
+</div>
+
+<div id="TempManage" class="tabcontent">
+    <div class="form-container">
+        <input type="text" id="tempManageItemName" placeholder="物资名称">
+        <button onclick="manageTempItem()">临存管理</button>
+    </div>
+</div>
+
+<div id="ReturnItem" class="tabcontent">
+    <div class="form-container">
+        <input type="text" id="returnItemName" placeholder="物资名称">
+        <input type="number" id="returnItemQuantity" placeholder="数量">
+        <button onclick="returnItem()">物资回仓</button>
+    </div>
+</div>
+
+<div id="Acceptance" class="tabcontent">
+    <div class="form-container">
+        <input type="text" id="acceptanceItemName" placeholder="物资名称">
+        <button onclick="acceptanceItem()">物资验收</button>
+    </div>
+</div>
+
+<div id="StockTaking" class="tabcontent">
+    <button onclick="stockTaking()">开始盘点</button>
+    <table id="stockTakingTable">
+        <thead>
+            <tr>
+                <th>物资名称</th>
+                <th>类别</th>
+                <th>实际数量</th>
+                <th>系统数量</th>
+                <th>差异</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- 盘点结果将在这里动态添加 -->
+        </tbody>
+    </table>
+</div>
+
+<div id="Reports" class="tabcontent">
+    <button onclick="generateReport('summary')">生成汇总报表</button>
+    <button onclick="generateReport('detailed')">生成详细报表</button>
+    <div id="reportContainer" class="report-container"></div>
+</div>
+
+<!-- The Modal -->
+<div id="myModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>物资详情</h2>
+        <table class="details-table" id="itemDetailsTable">
+            <thead>
+                <tr>
+                    <th>属性</th>
+                    <th>值</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- 物资详情将在这里动态添加 -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Fullscreen Warehouse Map Overlay -->
+<div id="warehouseMapOverlay" class="warehouse-map-fullscreen">
+    <span class="overlay-close" onclick="closeWarehouseMap()">&times;</span>
+    <div class="controls">
+        <div class="floor-selector">
+            <label for="floorSelect">楼层:</label>
+            <select id="floorSelect" onchange="updateMap()">
+                <option value="1">1层</option>
+                <option value="2">2层</option>
+                <option value="3">3层</option>
+            </select>
+            <span class="selected-info" id="floorInfo"></span>
+        </div>
+        <div class="section-selector">
+            <label for="sectionSelect">区域:</label>
+            <select id="sectionSelect" onchange="updateMap()">
+                <option value="1">1区</option>
+                <option value="2">2区</option>
+                <option value="3">3区</option>
+                <option value="4">4区</option>
+            </select>
+            <span class="selected-info" id="sectionInfo"></span>
+        </div>
+    </div>
+    <div class="map-container" id="fullscreenMapContainer">
+        <!-- Shelves will be dynamically added here -->
+    </div>
+</div>
+
+<script>
+    let inventory = [];
+    let warehouses = [
+        { id: 'W1', name: '仓库1', totalQuantity: 0, returnQuantity: 0, tempQuantity: 0, shelves: createShelves() },
+        { id: 'W2', name: '仓库2', totalQuantity: 0, returnQuantity: 0, tempQuantity: 0, shelves: createShelves() },
+        { id: 'W3', name: '仓库3', totalQuantity: 0, returnQuantity: 0, tempQuantity: 0, shelves: createShelves() },
+        { id: 'W4', name: '仓库4', totalQuantity: 0, returnQuantity: 0, tempQuantity: 0, shelves: createShelves() },
+        { id: 'W5', name: '仓库5', totalQuantity: 0, returnQuantity: 0, tempQuantity: 0, shelves: createShelves() },
+        { id: 'W6', name: '仓库6', totalQuantity: 0, returnQuantity: 0, tempQuantity: 0, shelves: createShelves() },
+        { id: 'W7', name: '仓库7', totalQuantity: 0, returnQuantity: 0, tempQuantity: 0, shelves: createShelves() },
+        { id: 'W8', name: '仓库8', totalQuantity: 0, returnQuantity: 0, tempQuantity: 0, shelves: createShelves() },
+        { id: 'W9', name: '仓库9', totalQuantity: 0, returnQuantity: 0, tempQuantity: 0, shelves: createShelves() },
+        { id: 'W10', name: '仓库10', totalQuantity: 0, returnQuantity: 0, tempQuantity: 0, shelves: createShelves() },
+        { id: 'W11', name: '仓库11', totalQuantity: 0, returnQuantity: 0, tempQuantity: 0, shelves: createShelves() },
+        { id: 'W12', name: '仓库12', totalQuantity: 0, returnQuantity: 0, tempQuantity: 0, shelves: createShelves() }
+    ];
+
+    function openTab(evt, tabName) {
+        var i, tabcontent, tablinks;
+        tabcontent = document.getElementsByClassName("tabcontent");
+        for (i = 0; i < tabcontent.length; i++) {
+            tabcontent[i].style.display = "none";
+        }
+        tablinks = document.getElementsByClassName("tablinks");
+        for (i = 0; i < tablinks.length; i++) {
+            tablinks[i].className = tablinks[i].className.replace(" active", "");
+        }
+        document.getElementById(tabName).style.display = "block";
+        evt.currentTarget.className += " active";
+        if (tabName === 'Inventory') {
+            renderInventory();
+        } else if (tabName === 'Home') {
+            renderWarehouses();
+        }
+    }
+
+    document.getElementById("defaultOpen").click();
+
+    function addNewItem() {
+        const itemName = document.getElementById('addItemName').value.trim();
+        const itemCategory = document.getElementById('addItemCategory').value;
+        const itemQuantity = parseInt(document.getElementById('addItemQuantity').value.trim(), 10);
+
+        if (itemName && itemCategory && !isNaN(itemQuantity)) {
+            inventory.push({ 
+                name: itemName, 
+                category: itemCategory, 
+                quantity: itemQuantity, 
+                status: '正常',
+                warehouseId: null,
+                shelfId: null
+            });
+            showAlert('success', '物资添加成功！');
+            renderInventory();
+            clearForm('AddItem');
+        } else {
+            showAlert('danger', '请输入有效的物资信息');
+        }
+    }
+
+    function receiveItem() {
+        const itemName = document.getElementById('receiveItemName').value.trim();
+        const itemQuantity = parseInt(document.getElementById('receiveItemQuantity').value.trim(), 10);
+
+        if (itemName && !isNaN(itemQuantity)) {
+            const itemIndex = inventory.findIndex(i => i.name === itemName);
+            if (itemIndex !== -1) {
+                inventory[itemIndex].quantity += itemQuantity;
+                updateWarehouseQuantities(inventory[itemIndex]);
+                showAlert('success', '物资入库成功！');
+            } else {
+                showAlert('danger', '物资不存在，请先添加物资');
+            }
+            renderInventory();
+            clearForm('ReceiveItem');
+        } else {
+            showAlert('danger', '请输入有效的物资信息');
+        }
+    }
+
+    function issueItem() {
+        const itemName = document.getElementById('issueItemName').value.trim();
+        const itemQuantity = parseInt(document.getElementById('issueItemQuantity').value.trim(), 10);
+
+        if (itemName && !isNaN(itemQuantity)) {
+            const itemIndex = inventory.findIndex(i => i.name === itemName);
+            if (itemIndex !== -1) {
+                if (inventory[itemIndex].quantity >= itemQuantity) {
+                    inventory[itemIndex].quantity -= itemQuantity;
+                    updateWarehouseQuantities(inventory[itemIndex], true);
+                    showAlert('success', '物资领用成功！');
+                } else {
+                    showAlert('danger', '库存不足');
+                }
+            } else {
+                showAlert('danger', '物资不存在');
+            }
+            renderInventory();
+            clearForm('IssueItem');
+        } else {
+            showAlert('danger', '请输入有效的物资信息');
+        }
+    }
+
+    function manageTempItem() {
+        const itemName = document.getElementById('tempManageItemName').value.trim();
+
+        if (itemName) {
+            const itemIndex = inventory.findIndex(i => i.name === itemName);
+            if (itemIndex !== -1) {
+                inventory[itemIndex].status = '临存管理';
+                showAlert('success', '物资已设为临存管理！');
+            } else {
+                showAlert('danger', '物资不存在');
+            }
+            renderInventory();
+            clearForm('TempManage');
+        } else {
+            showAlert('danger', '请输入有效的物资信息');
+        }
+    }
+
+    function returnItem() {
+        const itemName = document.getElementById('returnItemName').value.trim();
+        const itemQuantity = parseInt(document.getElementById('returnItemQuantity').value.trim(), 10);
+
+        if (itemName && !isNaN(itemQuantity)) {
+            const itemIndex = inventory.findIndex(i => i.name === itemName);
+            if (itemIndex !== -1) {
+                inventory[itemIndex].quantity += itemQuantity;
+                inventory[itemIndex].status = '正常';
+                updateWarehouseQuantities(inventory[itemIndex]);
+                showAlert('success', '物资回仓成功！');
+            } else {
+                showAlert('danger', '物资不存在，请先添加物资');
+            }
+            renderInventory();
+            clearForm('ReturnItem');
+        } else {
+            showAlert('danger', '请输入有效的物资信息');
+        }
+    }
+
+    function acceptanceItem() {
+        const itemName = document.getElementById('acceptanceItemName').value.trim();
+
+        if (itemName) {
+            const itemIndex = inventory.findIndex(i => i.name === itemName);
+            if (itemIndex !== -1) {
+                inventory[itemIndex].status = '已验收';
+                showAlert('success', '物资验收完成！');
+            } else {
+                showAlert('danger', '物资不存在');
+            }
+            renderInventory();
+            clearForm('Acceptance');
+        } else {
+            showAlert('danger', '请输入有效的物资信息');
+        }
+    }
+
+    function stockTaking() {
+        const tbody = document.querySelector('#stockTakingTable tbody');
+        tbody.innerHTML = '';
+
+        inventory.forEach((item) => {
+            const row = document.createElement('tr');
+
+            const nameCell = document.createElement('td');
+            nameCell.textContent = item.name;
+
+            const categoryCell = document.createElement('td');
+            categoryCell.textContent = item.category;
+
+            const actualQuantityCell = document.createElement('td');
+            const actualQuantity = prompt(`请输入 ${item.name} 的实际数量`);
+            actualQuantityCell.textContent = actualQuantity;
+
+            const systemQuantityCell = document.createElement('td');
+            systemQuantityCell.textContent = item.quantity;
+
+            const differenceCell = document.createElement('td');
+            differenceCell.textContent = parseInt(actualQuantity, 10) - item.quantity;
+
+            row.appendChild(nameCell);
+            row.appendChild(categoryCell);
+            row.appendChild(actualQuantityCell);
+            row.appendChild(systemQuantityCell);
+            row.appendChild(differenceCell);
+
+            tbody.appendChild(row);
+        });
+    }
+
+    function generateReport(type) {
+        const reportContainer = document.getElementById('reportContainer');
+        reportContainer.innerHTML = '';
+
+        const title = document.createElement('h2');
+        title.textContent = type === 'summary' ? '汇总报表' : '详细报表';
+        reportContainer.appendChild(title);
+
+        const table = document.createElement('table');
+        table.className = 'details-table';
+
+        const thead = document.createElement('thead');
+        const headerRow = document.createElement('tr');
+
+        const headers = ['物资名称', '类别', '数量', '状态'];
+        if (type === 'detailed') {
+            headers.push('详细信息');
+        }
+
+        headers.forEach(headerText => {
+            const th = document.createElement('th');
+            th.textContent = headerText;
+            headerRow.appendChild(th);
+        });
+
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+
+        const tbody = document.createElement('tbody');
+
+        inventory.forEach(item => {
+            const row = document.createElement('tr');
+
+            const nameCell = document.createElement('td');
+            nameCell.textContent = item.name;
+
+            const categoryCell = document.createElement('td');
+            categoryCell.textContent = item.category;
+
+            const quantityCell = document.createElement('td');
+            quantityCell.textContent = item.quantity;
+
+            const statusCell = document.createElement('td');
+            statusCell.textContent = item.status;
+            statusCell.className = `status-${item.status.toLowerCase().replace(/\s+/g, '-')}`;
+
+            row.appendChild(nameCell);
+            row.appendChild(categoryCell);
+            row.appendChild(quantityCell);
+            row.appendChild(statusCell);
+
+            if (type === 'detailed') {
+                const detailsCell = document.createElement('td');
+                const detailsButton = document.createElement('button');
+                detailsButton.textContent = '查看详情';
+                detailsButton.onclick = () => showItemDetails(item);
+                detailsCell.appendChild(detailsButton);
+                row.appendChild(detailsCell);
+            }
+
+            tbody.appendChild(row);
+        });
+
+        table.appendChild(tbody);
+        reportContainer.appendChild(table);
+    }
+
+    function showItemDetails(item) {
+        const tbody = document.querySelector('#itemDetailsTable tbody');
+        tbody.innerHTML = '';
+
+        Object.keys(item).forEach(key => {
+            const row = document.createElement('tr');
+
+            const keyCell = document.createElement('td');
+            keyCell.textContent = key.charAt(0).toUpperCase() + key.slice(1);
+
+            const valueCell = document.createElement('td');
+            valueCell.textContent = item[key];
+
+            row.appendChild(keyCell);
+            row.appendChild(valueCell);
+
+            tbody.appendChild(row);
+        });
+
+        modal.style.display = "block";
+    }
+
+    function filterInventory() {
+        const searchValue = document.getElementById('searchInventory').value.toLowerCase();
+        const filterStatus = document.getElementById('filterStatus').value;
+        renderInventory(searchValue, filterStatus);
+    }
+
+    function renderInventory(searchValue = '', filterStatus = '') {
+        const tbody = document.querySelector('#inventoryTable tbody');
+        tbody.innerHTML = '';
+
+        const filteredInventory = inventory.filter(item => {
+            const nameMatch = item.name.toLowerCase().includes(searchValue);
+            const statusMatch = filterStatus === '' || item.status === filterStatus;
+            return nameMatch && statusMatch;
+        });
+
+        filteredInventory.forEach((item, index) => {
+            const row = document.createElement('tr');
+
+            const nameCell = document.createElement('td');
+            nameCell.textContent = item.name;
+
+            const categoryCell = document.createElement('td');
+            categoryCell.textContent = item.category;
+
+            const quantityCell = document.createElement('td');
+            quantityCell.textContent = item.quantity;
+
+            const statusCell = document.createElement('td');
+            statusCell.textContent = item.status;
+            statusCell.className = `status-${item.status.toLowerCase().replace(/\s+/g, '-')}`;
+
+            const actionCell = document.createElement('td');
+            const detailsButton = document.createElement('button');
+            detailsButton.textContent = '查看详情';
+            detailsButton.onclick = () => showItemDetails(item);
+
+            actionCell.appendChild(detailsButton);
+
+            row.appendChild(nameCell);
+            row.appendChild(categoryCell);
+            row.appendChild(quantityCell);
+            row.appendChild(statusCell);
+            row.appendChild(actionCell);
+
+            tbody.appendChild(row);
+        });
+    }
+
+    function showAlert(type, message) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type}`;
+        alertDiv.textContent = message;
+        document.body.insertBefore(alertDiv, document.body.firstChild);
+        setTimeout(() => {
+            alertDiv.remove();
+        }, 3000);
+    }
+
+    function clearForm(tabId) {
+        const formElements = document.querySelectorAll(`#${tabId} input`);
+        formElements.forEach(element => element.value = '');
+        const selects = document.querySelectorAll(`#${tabId} select`);
+        selects.forEach(select => select.selectedIndex = 0);
+    }
+
+    // When the user clicks on <span> (x), close the modal
+    document.getElementsByClassName("close")[0].onclick = function() {
+        document.getElementById("myModal").style.display = "none";
+    }
+
+    // When the user clicks anywhere outside of the modal, close it
+    window.onclick = function(event) {
+        if (event.target == document.getElementById("myModal")) {
+            document.getElementById("myModal").style.display = "none";
+        }
+    }
+
+    function updateWarehouseQuantities(item, isIssuing = false) {
+        if (!item.warehouseId) {
+            assignRandomWarehouseAndShelf(item);
+        }
+        const warehouse = warehouses.find(w => w.id === item.warehouseId);
+        if (warehouse) {
+            warehouse.totalQuantity += isIssuing ? -item.quantity : item.quantity;
+            if (item.status === '临存管理') {
+                warehouse.tempQuantity += isIssuing ? -item.quantity : item.quantity;
+            } else if (item.status === '正常') {
+                warehouse.returnQuantity += isIssuing ? -item.quantity : item.quantity;
+            }
+            renderWarehouses();
+        }
+    }
+
+    function assignRandomWarehouseAndShelf(item) {
+        const randomWarehouse = warehouses[Math.floor(Math.random() * warehouses.length)];
+        const emptyShelf = randomWarehouse.shelves.find(shelf => shelf.items.length === 0);
+        if (emptyShelf) {
+            item.warehouseId = randomWarehouse.id;
+            item.shelfId = emptyShelf.id;
+            emptyShelf.items.push(item);
+        }
+    }
+
+    function renderWarehouses() {
+        const grid = document.querySelector('.warehouse-grid');
+        grid.innerHTML = '';
+
+        warehouses.forEach(warehouse => {
+            const warehouseItem = document.createElement('div');
+            warehouseItem.className = 'warehouse-item';
+            warehouseItem.setAttribute('data-warehouse-id', warehouse.id);
+            warehouseItem.onclick = () => showWarehouseMap(warehouse);
+
+            const nameElement = document.createElement('h3');
+            nameElement.textContent = warehouse.name;
+
+            const totalQuantityElement = document.createElement('p');
+            totalQuantityElement.textContent = `库存数量: ${warehouse.totalQuantity}`;
+
+            const returnQuantityElement = document.createElement('p');
+            returnQuantityElement.textContent = `回仓数量: ${warehouse.returnQuantity}`;
+
+            const tempQuantityElement = document.createElement('p');
+            tempQuantityElement.textContent = `临时数量: ${warehouse.tempQuantity}`;
+
+            warehouseItem.appendChild(nameElement);
+            warehouseItem.appendChild(totalQuantityElement);
+            warehouseItem.appendChild(returnQuantityElement);
+            warehouseItem.appendChild(tempQuantityElement);
+
+            grid.appendChild(warehouseItem);
+        });
+    }
+
+    function showWarehouseMap(warehouse) {
+        currentWarehouse = warehouse;
+        document.getElementById('warehouseMapOverlay').style.display = 'flex';
+        updateMap();
+    }
+
+    function getShelfColorClass(shelf) {
+        if (shelf.items.length === 0) {
+            return 'empty';
+        }
+        const statuses = shelf.items.map(item => item.status);
+        const normalCount = statuses.filter(status => status === '正常').length;
+        const tempCount = statuses.filter(status => status === '临存管理').length;
+        const acceptedCount = statuses.filter(status => status === '已验收').length;
+
+        const totalCount = statuses.length;
+        const greenRatio = normalCount / totalCount;
+        const yellowRatio = tempCount / totalCount;
+        const redRatio = acceptedCount / totalCount;
+
+        if (greenRatio >= 0.8) {
+            return 'green';
+        } else if (yellowRatio > redRatio) {
+            return 'yellow';
+        } else {
+            return 'red';
+        }
+    }
+
+    function updateMap() {
+        const floor = document.getElementById('floorSelect').value;
+        const section = document.getElementById('sectionSelect').value;
+        const fullscreenMapContainer = document.getElementById('fullscreenMapContainer');
+        fullscreenMapContainer.innerHTML = '';
+
+        currentWarehouse.shelves.forEach(shelf => {
+            if (shelf.id.includes(`-${floor}-${section}`)) {
+                const shelfElement = document.createElement('div');
+                shelfElement.className = 'shelf';
+                shelfElement.classList.add(getShelfColorClass(shelf));
+                shelfElement.dataset.shelfId = shelf.id;
+
+                const shelfLabel = document.createElement('div');
+                shelfLabel.className = 'shelf-label';
+                shelfLabel.textContent = `${shelf.id}\n${shelf.items.map(item => `${item.name} (${item.quantity})`).join('\n')}`;
+
+                shelfElement.appendChild(shelfLabel);
+                fullscreenMapContainer.appendChild(shelfElement);
+            }
+        });
+
+        document.getElementById('floorInfo').textContent = `当前楼层: ${floor}`;
+        document.getElementById('sectionInfo').textContent = `当前区域: ${section}`;
+    }
+
+    function closeWarehouseMap() {
+        document.getElementById('warehouseMapOverlay').style.display = 'none';
+    }
+
+    function createShelves() {
+        const shelves = [];
+        for (let floor = 1; floor <= 3; floor++) {
+            for (let section = 1; section <= 4; section++) {
+                for (let shelfNumber = 1; shelfNumber <= 64; shelfNumber++) {
+                    shelves.push({ id: `A-${floor}-${section}-${shelfNumber}`, items: [] });
+                }
+            }
+        }
+        return shelves;
+    }
+
+    // Randomly populate shelves with items
+    function populateShelvesWithItems() {
+        const itemCategories = ['电子设备', '办公用品', '原材料'];
+        const itemNames = ['电脑', '椅子', '螺丝钉', '显示器', '键盘', '鼠标', '纸张', '笔', '胶水'];
+
+        warehouses.forEach(warehouse => {
+            warehouse.shelves.forEach(shelf => {
+                if (Math.random() < 0.7) { // 70% chance to have items in a shelf
+                    const itemCount = Math.floor(Math.random() * 5) + 1; // 1 to 5 items per shelf
+                    for (let i = 0; i < itemCount; i++) {
+                        const itemName = itemNames[Math.floor(Math.random() * itemNames.length)];
+                        const itemCategory = itemCategories[Math.floor(Math.random() * itemCategories.length)];
+                        const itemQuantity = Math.floor(Math.random() * 100) + 1; // 1 to 100 quantity
+                        const itemStatus = ['正常', '临存管理', '已验收'][Math.floor(Math.random() * 3)];
+
+                        const newItem = { 
+                            name: itemName, 
+                            category: itemCategory, 
+                            quantity: itemQuantity, 
+                            status: itemStatus,
+                            warehouseId: warehouse.id,
+                            shelfId: shelf.id
+                        };
+
+                        inventory.push(newItem);
+                        shelf.items.push(newItem);
+                        updateWarehouseQuantities(newItem);
+                    }
+                }
+            });
+        });
+    }
+
+    populateShelvesWithItems(); // Populate shelves with random items
+
+    renderInventory();
+    renderWarehouses();
+</script>
+
+</body>
+</html>
